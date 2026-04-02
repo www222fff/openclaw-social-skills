@@ -11,20 +11,34 @@ description: Download TikTok videos, generate Chinese subtitles with faster-whis
 
 Agent 直接按以下步骤执行，不依赖 pipeline 脚本：
 
-### Step 1: 从指定账号选择视频
+### Step 1: 从视频队列选择视频
 
-**必须**从以下两个账号提取视频，按播放量从高到低选择：
-- `@kindpush343` → https://www.tiktok.com/@kindpush343
-- `@mind_and_measure` → https://www.tiktok.com/@mind_and_measure
+从预缓存的视频队列文件中**轮换账号**选取下一个待处理视频：
+
+**队列文件**：`~/.openclaw/workspace/skills/tiktok-video-make/video_queue.json`
+
+**结构**：两个账号各一个独立列表（按播放量降序），`nextAccount` 字段指示本次该用哪个账号。
+
+```json
+{
+  "lastUpdated": "2026-04-02",
+  "nextAccount": "kindpush343",
+  "kindpush343": [ {"id":"...","views":"7.3M","url":"...","done":false}, ... ],
+  "mind_and_measure": [ {"id":"...","views":"601.5K","url":"...","done":false}, ... ]
+}
+```
 
 **流程**：
-1. 用浏览器（openclaw profile）打开账号主页
-2. 用 evaluate 抓取视频列表（标题、播放量、链接）
-3. 按播放量从高到低排序
-4. 跳过已下载的视频（检查 `~/.openclaw/workspace/downloads/` 目录）
-5. 选择播放量最高的未处理视频
+1. 读取 `video_queue.json`
+2. 从 `nextAccount` 指示的列表中取第一个 `"done": false` 的视频
+3. 如果该列表已全部 done，则从另一个列表取
+4. 下载完成后：将该视频标记为 `"done": true`，**切换 `nextAccount` 到另一个账号**，写回文件
+5. 如果两个列表都全部 done → 重新爬取（见下方）
 
-**不接受**：随意选视频、用 fallback 列表、跳过账号浏览直接用 URL。
+**两个列表都用完时**：
+1. 用浏览器（openclaw profile）打开各账号主页
+2. 点 Popular 排序，用 evaluate 抓取视频链接和播放量
+3. 分别写入各自的列表，更新 `video_queue.json`
 
 ### Step 2: 下载视频
 
@@ -96,9 +110,9 @@ pip install faster-whisper yt-dlp
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | font_name | Droid Sans Fallback | 字体 |
-| font_size | 26 | 字号 |
+| font_size | 38 | 字号 |
 | alignment | 2 | 底部居中 |
-| margin_v | 30 | 底部边距 px（贴近底部，在英文字幕下方） |
+| margin_v | 120 | 底部边距 px（往上偏移，避免贴底） |
 | outline_width | 2 | 描边宽度 |
 
 ## ⚠️ 注意

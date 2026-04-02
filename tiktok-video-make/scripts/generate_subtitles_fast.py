@@ -15,12 +15,12 @@ LOCAL_MODEL_PATH = "/home/dannyaw/fast-whisper"
 # 默认字幕样式
 DEFAULT_STYLE = {
     "font_name": "Droid Sans Fallback",
-    "font_size": 26,
+    "font_size": 38,
     "primary_color": "&H00FFFFFF",   # 白色 (ASS: AABBGGRR)
     "outline_color": "&H00000000",   # 黑色描边
     "outline_width": 2,
     "alignment": 2,                   # 底部居中
-    "margin_v": 30,
+    "margin_v": 120,
 }
 
 
