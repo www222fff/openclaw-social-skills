@@ -11,9 +11,9 @@ description: Daily job search for Full Stack / AI Agent / Backend / Network deve
 
 参考：`MEMORY.md` 中的简历链接和职位意向
 
-- **职位目标**：Full Stack Engineer / AI Agent Engineer / Backend Engineer / Network Engineer
-- **技术栈**：C++, Node.js, React, Python, Golang, LLM Integration, Agent Framework
-- **优先级**：AI Agent > Full Stack with AI > Backend > Network
+- **职位目标**：Full Stack Engineer / AI Agent Engineer / Backend Engineer / Blockchain Engineer / Network Engineer
+- **技术栈**：C++, Node.js, React, Python, Golang, Solidity, Smart Contracts, LLM Integration, Agent Framework
+- **优先级**：AI Agent > Blockchain > Full Stack with AI > Backend > Network
 - **地理要求**：Remote 职位必须允许 Chinese timezone 或明确支持中国区
 
 ## 核心流程
@@ -24,7 +24,7 @@ description: Daily job search for Full Stack / AI Agent / Backend / Network deve
 
 1. **Hacker News "Who is Hiring?"** - https://news.ycombinator.com/jobs
    - 每月 1 号发布新帖，质量极高
-   - 搜索关键词：AI Agent, Full Stack, Backend, Remote, China, Asia
+   - 搜索关键词：AI Agent, Blockchain, Web3, Full Stack, Backend, Remote, China, Asia
 
 2. **Remote.co** - https://remote.co/remote-jobs/developer/
    - 国际 remote 职位
@@ -32,11 +32,11 @@ description: Daily job search for Full Stack / AI Agent / Backend / Network deve
 
 3. **Startup Jobs** - https://startup.jobs/
    - 创业公司职位
-   - 搜索：AI, Agent, Full Stack
+   - 搜索：AI, Agent, Blockchain, Web3, Full Stack
 
 4. **Wellfound (AngelList)** - https://wellfound.com/role/l/software-engineer
    - AI/LLM 初创公司集中
-   - 搜索：AI Agent Engineer, Full Stack
+   - 搜索：AI Agent Engineer, Blockchain Engineer, Full Stack
 
 5. **FlexJobs** - https://www.flexjobs.com/
    - 需付费会员，质量高
@@ -49,18 +49,22 @@ description: Daily job search for Full Stack / AI Agent / Backend / Network deve
 ### 2. 职位筛选规则
 
 **必须满足**：
+- **发布时间**：7 天以内（排除老旧职位）
 - Remote / Distributed / Work from anywhere
 - 明确允许 Asia / China / Chinese timezone 或 "timezone flexible"
-- 匹配技术栈（Node.js / React / Python / Golang / LLM / Agent）
+- 匹配技术栈（C++ / Node.js / React / Python / Golang / Solidity / Smart Contracts / LLM / Agent）
 
 **优先级排序**：
-1. 明确标注 "China OK" / "Asia timezone" 的职位
-2. AI Agent Engineer / LLM Engineer 职位
-3. Full Stack with AI/ML 经验要求
-4. Backend Engineer（Golang/Python/Node.js）
-5. Network Engineer
+1. **发布 1-3 天内**的职位（最新、最活跃）
+2. 明确标注 "China OK" / "Asia timezone" 的职位
+3. AI Agent Engineer / LLM Engineer 职位
+4. Blockchain Engineer / Smart Contract Developer 职位
+5. Full Stack with AI/Blockchain 经验要求
+6. Backend Engineer（C++/Golang/Python/Node.js）
+7. Network Engineer
 
 **排除**：
+- **发布超过 7 天的职位**（可能已招满）
 - US-only / Europe-only（明确限制地理位置）
 - On-site / Hybrid（非全远程）
 - 不匹配技术栈的职位
@@ -95,6 +99,13 @@ description: Daily job search for Full Stack / AI Agent / Backend / Network deve
 
 ## 实现方式
 
+### 时间筛选
+
+所有搜索必须过滤发布时间：
+- 提取职位发布时间（如 "1d ago", "3 days ago", "posted 5 days ago"）
+- 计算天数，**只保留 7 天以内的职位**
+- 优先返回 1-3 天内的职位
+
 ### 优先使用 web_fetch
 
 对静态页面优先用 `web_fetch` 提取内容：
@@ -120,7 +131,7 @@ browser(action: "snapshot") // 或 evaluate 提取职位列表
 
 - URL：https://news.ycombinator.com/jobs
 - 用 `web_fetch` 提取页面
-- 搜索关键词：`AI Agent`, `Full Stack`, `Remote`, `China`, `Asia`
+- 搜索关键词：`AI Agent`, `Blockchain`, `Web3`, `Smart Contract`, `Full Stack`, `Remote`, `China`, `Asia`
 - 筛选：包含 "Remote" 且未排除 China/Asia 的职位
 
 ### Remote.co
@@ -132,13 +143,15 @@ browser(action: "snapshot") // 或 evaluate 提取职位列表
 ### Startup Jobs / Wellfound
 
 - 用 `browser` 搜索（可能需要 JS 渲染）
-- 搜索关键词：AI Agent, Full Stack, Backend
+- 搜索关键词：AI Agent, Blockchain, Web3, Full Stack, Backend
 - 筛选：Remote + 技术栈匹配
 
 ### We Work Remotely
 
 - URL：https://weworkremotely.com/categories/remote-full-stack-programming-jobs
-- 用 `web_fetch` 提取职位列表
+- 用 `web_fetch` 或 `browser` 提取职位列表
+- **提取发布时间**（如 "1d", "5d", "15d"）
+- **过滤**：只保留 7 天以内的职位（1d-7d）
 - 筛选：Full Stack / Backend 分类
 
 ## 常见问题
@@ -163,6 +176,7 @@ browser(action: "snapshot") // 或 evaluate 提取职位列表
 
 **强匹配**（优先）：
 - AI Agent / LLM / LangChain / OpenClaw / AutoGPT
+- Blockchain / Web3 / Smart Contracts / Solidity / Rust
 - Full Stack (Node.js + React)
 - Backend (C++ / Python / Golang / Node.js)
 - Systems Programming (C++ / Distributed Systems)

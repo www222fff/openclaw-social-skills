@@ -1,154 +1,108 @@
 ---
 name: tiktok-video-make
-description: Download TikTok videos, extract audio, merge with custom video, adjust audio volume, and upload to Google Drive. Use when user asks to download TikTok content, replace video audio, create videos with TikTok audio, or upload media to Google Drive folder daily_english.
+description: Download TikTok videos, generate Chinese subtitles with faster-whisper, embed subtitles, upload to Google Drive, and publish to Douyin. Use when user asks to download TikTok content with subtitles, add Chinese subtitles to videos, or upload/publish to Google Drive or Douyin.
 ---
 
 # TikTok Video Maker
 
-Download TikTok videos, extract/replace audio, and upload to Google Drive.
+从 TikTok 下载视频 → faster-whisper 生成中文字幕（逐字出现效果）→ ffmpeg 嵌入 → 上传 Google Drive → 浏览器发布抖音（私密）
 
-## Quick Start
+## 🎯 完整流程
 
-### 1. Download Audio from TikTok (Recommended)
+Agent 直接按以下步骤执行，不依赖 pipeline 脚本：
 
-**直接下载音频文件**（yt-dlp 自动提取，无需 ffmpeg 手动处理）：
+### Step 1: 从指定账号选择视频
+
+**必须**从以下两个账号提取视频，按播放量从高到低选择：
+- `@kindpush343` → https://www.tiktok.com/@kindpush343
+- `@mind_and_measure` → https://www.tiktok.com/@mind_and_measure
+
+**流程**：
+1. 用浏览器（openclaw profile）打开账号主页
+2. 用 evaluate 抓取视频列表（标题、播放量、链接）
+3. 按播放量从高到低排序
+4. 跳过已下载的视频（检查 `~/.openclaw/workspace/downloads/` 目录）
+5. 选择播放量最高的未处理视频
+
+**不接受**：随意选视频、用 fallback 列表、跳过账号浏览直接用 URL。
+
+### Step 2: 下载视频
 
 ```bash
 cd ~/.openclaw/workspace/downloads
-yt-dlp --proxy "http://135.245.192.7:8000" \
-  --extract-audio --audio-format mp3 --audio-quality 0 \
-  -o "%(title)s.%(ext)s" \
-  <TikTok URL>
+yt-dlp --proxy http://135.245.192.7:8000 --no-check-certificate -o "%(title)s.%(ext)s" <选中的视频URL>
 ```
 
-### 2. (Alternative) Download Video then Extract Audio
-
-如果需要保留视频文件：
+### Step 3: 生成中文字幕（ASS 格式，逐字出现效果）
 
 ```bash
-# Step 1: Download video
-yt-dlp --proxy "http://135.245.192.7:8000" \
-  -o "%(title)s.%(ext)s" \
-  <TikTok URL>
-
-# Step 2: Extract audio
-ffmpeg -i video.mp4 -vn -acodec libmp3lame -q:a 2 audio.mp3 -y
+python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/generate_subtitles_fast.py <video.mp4>
 ```
 
-### 3. Merge Audio with Video
+- 模型：本地 `/home/dannyaw/fast-whisper`（CTranslate2 格式，~1.5GB）
+- 输出：ASS 格式，`\kf` 卡拉OK标签实现逐字填充
+- 语言：默认 auto 自动检测（英文视频会先识别英文，agent 再翻译成中文字幕）
+- 字体大小：26，底部居中，margin 30px（放在原始英文字幕下方）
 
-**以音频时长为准**（视频长→截断，视频短→循环）
-
-文件名自动添加日期时间戳（格式：`YYYYMMDD_HHMM_名称.mp4`）
+### Step 4: 嵌入字幕
 
 ```bash
-# 视频原声降到5%，新音频放大3倍
-# 输出文件名：20260316_1406_output.mp4
-ffmpeg -i video.mp4 -i audio.mp3 \
-  -filter_complex "[0:a]volume=0.05[a0];[1:a]volume=3.0[a1];[a0][a1]amix=inputs=2:duration=shortest[aout]" \
-  -map 0:v -map "[aout]" -c:v copy -c:a aac -shortest \
-  "$(date +%Y%m%d_%H%M)_output.mp4" -y
+python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/embed_subtitles.py <video.mp4> <video.ass>
 ```
 
-### 4. Upload to Google Drive
+ASS 格式自动使用内嵌样式（保留逐字效果），SRT 格式走 force_style。
+
+### Step 5: 上传 Google Drive
 
 ```bash
-export PATH=~/.local/bin:$PATH
-export http_proxy=http://135.245.192.7:8000 https_proxy=http://135.245.192.7:8000
-rclone copy output.mp4 daily_english:daily_english -P
+export http_proxy=http://135.245.192.7:8000
+export https_proxy=http://135.245.192.7:8000
+~/.local/bin/rclone copy <subtitled_video.mp4> daily_english:daily_english -P
 ```
 
-## Common Workflows
+### Step 6: 发布到抖音（浏览器，私密发布）
 
-### Workflow A: Full Automation (Recommended)
+使用 OpenClaw browser 工具（openclaw profile）：
 
-**完全自动化**：从备选视频列表获取高播放量音频，合并到随机视频，上传到 Google Drive
+1. 打开 `https://creator.douyin.com/creator-micro/content/upload`
+2. 上传视频文件
+3. 填写标题和描述
+4. **设置为「仅自己可见」**（私密发布）
+5. 点击发布
+
+## 📁 目录结构
+
+- **下载目录**：`~/.openclaw/workspace/downloads/`
+- **脚本目录**：`~/.openclaw/workspace/skills/tiktok-video-make/scripts/`
+  - `generate_subtitles_fast.py` — 字幕生成（ASS/SRT）
+  - `embed_subtitles.py` — 字幕嵌入
+
+## 📦 依赖
 
 ```bash
-# 准备工作（只需一次）：
-# 1. 将视频文件放到 downloads/videos/ 目录
-cp video1.mp4 video2.mp4 video3.mp4 ~/.openclaw/workspace/downloads/videos/
-
-# 2. 运行自动化流程
-python3 scripts/auto_pipeline.py
+sudo apt install ffmpeg
+pip install faster-whisper yt-dlp
 ```
 
-**自动化流程**：
-1. 从 `videos/` 随机选择一个视频
-2. 从 `.tiktok_fallback.json` 读取备选视频列表
-3. 筛选播放量最高的视频（排除已下载）
-4. 下载音频
-5. 合并到选中的视频
-6. 上传到 Google Drive
-7. 记录视频ID到历史文件
+- 字体：Droid Sans Fallback（系统已有），推荐 `sudo apt install fonts-noto-cjk`
+- faster-whisper 模型：`/home/dannyaw/fast-whisper`（本地，无需联网）
+- rclone：已配置 `daily_english` remote
+- 代理：`http://135.245.192.7:8000`
 
-**配置**：
-- **备选视频列表**：`~/.openclaw/workspace/downloads/.tiktok_fallback.json`
-- **视频目录**：`~/.openclaw/workspace/downloads/videos/`
-- **历史文件**：`~/.openclaw/workspace/downloads/.download_history.json`
+## 🔧 字幕样式配置
 
-**更新备选列表**：
-当需要添加新视频时，手动编辑 `.tiktok_fallback.json` 或重新抓取 TikTok 账号。
+在 `generate_subtitles_fast.py` 顶部 `DEFAULT_STYLE` 可调：
 
-### Workflow B: TikTok Audio → Custom Video
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| font_name | Droid Sans Fallback | 字体 |
+| font_size | 26 | 字号 |
+| alignment | 2 | 底部居中 |
+| margin_v | 30 | 底部边距 px（贴近底部，在英文字幕下方） |
+| outline_width | 2 | 描边宽度 |
 
-1. **Download audio directly** from TikTok (use yt-dlp `--extract-audio`)
-2. Merge with user's video
-3. Upload to Google Drive
+## ⚠️ 注意
 
-### Workflow B: Download TikTok Video (with Audio)
-
-1. Open TikTok in browser (`profile=openclaw`)
-2. Search user or keyword
-3. Filter by highest views (use `evaluate` to extract video list + view counts)
-4. Download with yt-dlp
-
-## Important Notes
-
-### Browser Control
-
-- **Profile**: Use default browser (no profile specified) for TikTok scraping
-- **No screenshot/vision**: 禁用 vision 功能，全部走 DOM/evaluate
-- **Search on TikTok**: 用 `evaluate` + JS 操作搜索框，不依赖 snapshot
-
-### Audio Volume Control
-
-- 视频原声：`[0:a]volume=0.05` (5%)
-- 新音频：`[1:a]volume=3.0` (300%)
-- 混合：`amix=inputs=2:duration=shortest`
-
-### File Organization
-
-- 下载目录：`~/.openclaw/workspace/downloads/`
-- Google Drive 目标文件夹：`daily_english:daily_english`
-
-### Prerequisites
-
-- **ffmpeg**: 必须安装（`sudo apt install ffmpeg`）
-- **yt-dlp**: 已安装
-- **rclone**: 已安装并配置 `daily_english` remote
-
-## Troubleshooting
-
-### yt-dlp SSL Error
-
-- 加代理：`--proxy "http://135.245.192.7:8000"`
-- 加 `--no-check-certificate`（不推荐）
-
-### 无水印下载
-
-yt-dlp 默认下载带水印视频。去水印需要：
-- 第三方网站（snapany.com / snaptik.app，但可能有反自动化）
-- 或接受带水印版本
-
-### 字幕生成
-
-需要 Whisper 模型（当前网络环境下载困难）。备选方案：
-- 手动听写文本
-- 用在线字幕服务（需要稳定网络）
-
-## Reference
-
-- yt-dlp docs: https://github.com/yt-dlp/yt-dlp
-- ffmpeg audio filters: https://ffmpeg.org/ffmpeg-filters.html#Audio-Filters
-- rclone Google Drive: https://rclone.org/drive/
+- 不使用 LLM vision 功能，浏览器操作用 snapshot/evaluate
+- 发布到抖音默认**私密发布**
+- 浏览器使用 `openclaw` profile
