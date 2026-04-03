@@ -15,12 +15,12 @@ LOCAL_MODEL_PATH = "/home/dannyaw/fast-whisper"
 # 默认字幕样式
 DEFAULT_STYLE = {
     "font_name": "Droid Sans Fallback",
-    "font_size": 38,
+    "font_size": 50,
     "primary_color": "&H00FFFFFF",   # 白色 (ASS: AABBGGRR)
     "outline_color": "&H00000000",   # 黑色描边
     "outline_width": 2,
     "alignment": 2,                   # 底部居中
-    "margin_v": 120,
+    "margin_v": 500,
 }
 
 
@@ -141,18 +141,46 @@ def generate_subtitles(video_path, output_path=None, model_path=LOCAL_MODEL_PATH
     return str(output_path)
 
 
+MAX_CHARS_PER_LINE = 20  # 每行最多中文字符数（英文按 word 数量自动适配）
+
+
+def _split_words_by_char_limit(words, max_chars=MAX_CHARS_PER_LINE):
+    """将 word 列表按字符数限制拆分为多个子列表，每段不超过 max_chars 个字符。"""
+    chunks = []
+    current = []
+    current_len = 0
+    for w in words:
+        wtext = w.word.strip()
+        wlen = len(wtext)
+        if current and current_len + wlen > max_chars:
+            chunks.append(current)
+            current = [w]
+            current_len = wlen
+        else:
+            current.append(w)
+            current_len += wlen
+    if current:
+        chunks.append(current)
+    return chunks
+
+
 def _write_ass(segments, output_path, style=None):
-    """写 ASS 字幕（带逐字卡拉OK效果）"""
+    """写 ASS 字幕（带逐字卡拉OK效果，长句自动拆行，每行不超过 MAX_CHARS_PER_LINE 字）"""
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(generate_ass_header(style))
         for seg in segments:
-            start = format_ass_time(seg.start)
-            end = format_ass_time(seg.end)
             if seg.words:
-                text = build_karaoke_line(seg.words, seg.start, seg.end)
+                chunks = _split_words_by_char_limit(seg.words)
+                for chunk in chunks:
+                    chunk_start = format_ass_time(chunk[0].start)
+                    chunk_end = format_ass_time(chunk[-1].end)
+                    text = build_karaoke_line(chunk, chunk[0].start, chunk[-1].end)
+                    f.write(f"Dialogue: 0,{chunk_start},{chunk_end},Default,,0,0,0,,{text}\n")
             else:
-                text = seg.text.strip()
-            f.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{text}\n")
+                # 无 word-level 时整段输出
+                start = format_ass_time(seg.start)
+                end = format_ass_time(seg.end)
+                f.write(f"Dialogue: 0,{start},{end},Default,,0,0,0,,{seg.text.strip()}\n")
 
 
 def _write_srt(segments, output_path):

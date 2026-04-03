@@ -110,9 +110,9 @@ pip install faster-whisper yt-dlp
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | font_name | Droid Sans Fallback | 字体 |
-| font_size | 38 | 字号 |
+| font_size | 50 | 字号 |
 | alignment | 2 | 底部居中 |
-| margin_v | 120 | 底部边距 px（往上偏移，避免贴底） |
+| margin_v | 500 | 底部边距 px |
 | outline_width | 2 | 描边宽度 |
 
 ## ⚠️ 注意
