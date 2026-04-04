@@ -60,14 +60,26 @@ python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/generate_subtitle
 
 ### Step 4: 当前默认手动翻译为中文 ASS（保留原时间轴）
 
-当前**不要默认走网络翻译**。原因：免费网络翻译链路不稳定，容易超时/卡住。
+当前默认走**手动翻译**，不走网络翻译。
 
 正确做法：
 
 1. 先拿 Step 3 生成的英文 ASS 作为时间轴基准
-2. agent 根据英文内容**手动翻译成中文**
-3. **只替换字幕文本，不改每条 Dialogue 的 start/end**
-4. 中文使用 `\kf` 逐字出现效果，必要时最多拆成两行
+2. 导出手动翻译模板：
+
+```bash
+python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/build_manual_cn_ass.py template <source.ass>
+```
+
+3. agent 根据模板里的 `source` 字段手动填写 `translated`
+4. 基于已填写的模板重建中文 ASS：
+
+```bash
+python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/build_manual_cn_ass.py build <source.ass> <translations.json> [output.ass]
+```
+
+5. **只替换字幕文本，不改每条 Dialogue 的 start/end**
+6. 中文使用 `\kf` 逐字出现效果，必要时最多拆成两行
 
 如果已有现成英文 ASS，也可以直接基于该 ASS 重建中文 ASS；这是当前默认方案。
 
@@ -102,8 +114,8 @@ export https_proxy=http://135.245.192.7:8000
 - **下载目录**：`~/.openclaw/workspace/downloads/`
 - **脚本目录**：`~/.openclaw/workspace/skills/tiktok-video-make/scripts/`
   - `generate_subtitles_fast.py` — 原文/英文字幕生成（ASS/SRT）
+  - `build_manual_cn_ass.py` — 基于英文 ASS 和人工翻译结果重建中文 ASS（保留原时间轴）
   - `subtitle_utils.py` — ASS 时间轴/卡拉 OK 文本公共工具
-  - `translate_ass_preserve_timing.py` — 保时轴翻译脚本（当前不作为默认路径，后续可接稳定翻译后端）
   - `embed_subtitles.py` — 字幕嵌入
 
 ## 📦 依赖

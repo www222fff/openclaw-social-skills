@@ -5,12 +5,9 @@ from __future__ import annotations
 
 import json
 import re
-import time
-import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Sequence
+from typing import Sequence
 
 LOCAL_MODEL_PATH = "/home/dannyaw/fast-whisper"
 
@@ -376,54 +373,3 @@ def write_translated_ass(header: Sequence[str], dialogues: Sequence[ParsedAssDia
         with open(sidecar_json_path, "w", encoding="utf-8") as f:
             json.dump(records, f, ensure_ascii=False, indent=2)
     return str(output_path)
-
-
-def translate_text_google(text: str, source_lang: str = "auto", target_lang: str = "zh-CN",
-                          timeout: int = 20, retries: int = 3) -> str:
-    endpoint = "https://translate.googleapis.com/translate_a/single"
-    params = {
-        "client": "gtx",
-        "sl": source_lang,
-        "tl": target_lang,
-        "dt": "t",
-        "q": text,
-    }
-    url = endpoint + "?" + urllib.parse.urlencode(params)
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36"
-    }
-
-    last_error = None
-    for attempt in range(1, retries + 1):
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            translated = "".join(part[0] for part in data[0] if part and part[0])
-            return normalize_text(translated)
-        except Exception as exc:  # noqa: BLE001
-            last_error = exc
-            if attempt < retries:
-                time.sleep(1.5 * attempt)
-    raise RuntimeError(f"Translation failed after {retries} attempts: {last_error}")
-
-
-def translate_texts_google(texts: Iterable[str], source_lang: str = "auto", target_lang: str = "zh-CN",
-                           sleep_seconds: float = 0.15) -> list[str]:
-    results: list[str] = []
-    cache: dict[str, str] = {}
-
-    for text in texts:
-        normalized = normalize_text(text)
-        if not normalized:
-            results.append("")
-            continue
-        if normalized in cache:
-            results.append(cache[normalized])
-            continue
-        translated = translate_text_google(normalized, source_lang=source_lang, target_lang=target_lang)
-        cache[normalized] = translated
-        results.append(translated)
-        if sleep_seconds > 0:
-            time.sleep(sleep_seconds)
-    return results
