@@ -1,11 +1,11 @@
 ---
 name: tiktok-video-make
-description: Download TikTok videos, generate Chinese subtitles with faster-whisper, embed subtitles, upload to Google Drive, and publish to Douyin. Use when user asks to download TikTok content with subtitles, add Chinese subtitles to videos, or upload/publish to Google Drive or Douyin.
+description: Download TikTok videos, generate timed source subtitles with faster-whisper, convert them into Chinese subtitles while preserving timing, embed subtitles, upload to Google Drive, and publish to Douyin. Use when user asks to download TikTok content with subtitles, add Chinese subtitles to videos, or upload/publish to Google Drive or Douyin.
 ---
 
 # TikTok Video Maker
 
-从 TikTok 下载视频 → faster-whisper 生成中文字幕（逐字出现效果）→ ffmpeg 嵌入 → 上传 Google Drive → 浏览器发布抖音（私密）
+从 TikTok 下载视频 → faster-whisper 生成原文/英文字幕时间轴 → **当前默认由 agent 手动翻译成中文字幕（保留原时间轴）** → ffmpeg 嵌入 → 上传 Google Drive → 浏览器发布抖音（私密）
 
 ## 🎯 完整流程
 
@@ -47,18 +47,31 @@ cd ~/.openclaw/workspace/downloads
 yt-dlp --proxy http://135.245.192.7:8000 --no-check-certificate -o "%(title)s.%(ext)s" <选中的视频URL>
 ```
 
-### Step 3: 生成中文字幕（ASS 格式，逐字出现效果）
+### Step 3: 生成原文/英文 ASS 时间轴
 
 ```bash
 python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/generate_subtitles_fast.py <video.mp4>
 ```
 
 - 模型：本地 `/home/dannyaw/fast-whisper`（CTranslate2 格式，~1.5GB）
-- 输出：ASS 格式，`\kf` 卡拉OK标签实现逐字填充
-- 语言：默认 auto 自动检测（英文视频会先识别英文，agent 再翻译成中文字幕）
-- 字体大小：26，底部居中，margin 30px（放在原始英文字幕下方）
+- 输出：ASS 格式，保留 segment / word timestamps
+- 语言：默认 auto 自动检测
+- **注意**：`faster-whisper` 负责语音识别和时间轴，不负责稳定的英→中字幕翻译
 
-### Step 4: 嵌入字幕
+### Step 4: 当前默认手动翻译为中文 ASS（保留原时间轴）
+
+当前**不要默认走网络翻译**。原因：免费网络翻译链路不稳定，容易超时/卡住。
+
+正确做法：
+
+1. 先拿 Step 3 生成的英文 ASS 作为时间轴基准
+2. agent 根据英文内容**手动翻译成中文**
+3. **只替换字幕文本，不改每条 Dialogue 的 start/end**
+4. 中文使用 `\kf` 逐字出现效果，必要时最多拆成两行
+
+如果已有现成英文 ASS，也可以直接基于该 ASS 重建中文 ASS；这是当前默认方案。
+
+### Step 5: 嵌入字幕
 
 ```bash
 python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/embed_subtitles.py <video.mp4> <video.ass>
@@ -66,7 +79,7 @@ python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/embed_subtitles.p
 
 ASS 格式自动使用内嵌样式（保留逐字效果），SRT 格式走 force_style。
 
-### Step 5: 上传 Google Drive
+### Step 6: 上传 Google Drive
 
 ```bash
 export http_proxy=http://135.245.192.7:8000
@@ -74,7 +87,7 @@ export https_proxy=http://135.245.192.7:8000
 ~/.local/bin/rclone copy <subtitled_video.mp4> daily_english:daily_english -P
 ```
 
-### Step 6: 发布到抖音（浏览器，私密发布）
+### Step 7: 发布到抖音（浏览器，私密发布）
 
 使用 OpenClaw browser 工具（openclaw profile）：
 
@@ -88,7 +101,9 @@ export https_proxy=http://135.245.192.7:8000
 
 - **下载目录**：`~/.openclaw/workspace/downloads/`
 - **脚本目录**：`~/.openclaw/workspace/skills/tiktok-video-make/scripts/`
-  - `generate_subtitles_fast.py` — 字幕生成（ASS/SRT）
+  - `generate_subtitles_fast.py` — 原文/英文字幕生成（ASS/SRT）
+  - `subtitle_utils.py` — ASS 时间轴/卡拉 OK 文本公共工具
+  - `translate_ass_preserve_timing.py` — 保时轴翻译脚本（当前不作为默认路径，后续可接稳定翻译后端）
   - `embed_subtitles.py` — 字幕嵌入
 
 ## 📦 依赖
