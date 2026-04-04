@@ -1,11 +1,11 @@
 ---
 name: tiktok-video-make
-description: Download TikTok videos, generate timed source subtitles with faster-whisper, convert them into Chinese subtitles while preserving timing, embed subtitles, upload to Google Drive, and publish to Douyin. Use when user asks to download TikTok content with subtitles, add Chinese subtitles to videos, or upload/publish to Google Drive or Douyin.
+description: Download TikTok videos, generate timed source subtitles with faster-whisper, convert them into Chinese subtitles while preserving timing, embed subtitles, and upload to Google Drive. Use when user asks to download TikTok content with subtitles, add Chinese subtitles to videos, or upload/publish to Google Drive.
 ---
 
 # TikTok Video Maker
 
-从 TikTok 下载视频 → faster-whisper 生成原文/英文字幕时间轴 → **当前默认由 agent 手动翻译成中文字幕（保留原时间轴）** → ffmpeg 嵌入 → 上传 Google Drive → 浏览器发布抖音（私密）
+从 TikTok 下载视频 → faster-whisper 生成原文/英文字幕时间轴 → **当前默认由 agent 手动翻译成中文字幕（保留原时间轴）** → ffmpeg 嵌入 → 上传 Google Drive
 
 ## 🎯 完整流程
 
@@ -99,16 +99,6 @@ export https_proxy=http://135.245.192.7:8000
 ~/.local/bin/rclone copy <subtitled_video.mp4> daily_english:daily_english -P
 ```
 
-### Step 7: 发布到抖音（浏览器，私密发布）
-
-使用 OpenClaw browser 工具（openclaw profile）：
-
-1. 打开 `https://creator.douyin.com/creator-micro/content/upload`
-2. 上传视频文件
-3. 填写标题和描述
-4. **设置为「仅自己可见」**（私密发布）
-5. 点击发布
-
 ## 📁 目录结构
 
 - **下载目录**：`~/.openclaw/workspace/downloads/`
@@ -145,5 +135,3 @@ pip install faster-whisper yt-dlp
 ## ⚠️ 注意
 
 - 不使用 LLM vision 功能，浏览器操作用 snapshot/evaluate
-- 发布到抖音默认**私密发布**
-- 浏览器使用 `openclaw` profile
