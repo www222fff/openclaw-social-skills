@@ -57,9 +57,8 @@ def embed_subtitles(
     
     print(f"🎬 Embedding subtitles into video...")
     print(f"   Video: {video_path}")
-    print(f"   SRT: {srt_path}")
+    print(f"   Subtitle: {srt_path}")
     print(f"   Output: {output_path}")
-    print(f"   Position: {position}, Size: {font_size}, Margin: {margin_v}px")
     
     # 构建 ffmpeg subtitles filter
     # 位置映射：
@@ -81,7 +80,9 @@ def embed_subtitles(
     if srt_lower.endswith(".ass") or srt_lower.endswith(".ssa"):
         # ASS 格式 — 直接使用内嵌样式（含卡拉OK效果），不覆盖 force_style
         subtitles_filter = f"ass={srt_escaped}"
+        print("   Style source: embedded ASS style (FontSize/MarginV from .ass file)")
     else:
+        print(f"   Style source: force_style (Position={position}, Size={font_size}, Margin={margin_v}px)")
         # SRT 格式 — 使用 force_style
         subtitles_filter = (
             f"subtitles={srt_escaped}:"

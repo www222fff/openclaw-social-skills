@@ -17,7 +17,7 @@ import json
 import sys
 from pathlib import Path
 
-from subtitle_utils import ass_text_to_plain, parse_ass_dialogues, write_translated_ass
+from subtitle_utils import DEFAULT_STYLE, ass_text_to_plain, parse_ass_dialogues, write_translated_ass
 
 
 def export_template(ass_path: str | Path, output_path: str | Path | None = None) -> str:
@@ -88,7 +88,14 @@ def build_manual_cn_ass(ass_path: str | Path, translations_path: str | Path,
     if empty_indexes:
         raise ValueError('Empty translations found at rows: ' + ', '.join(empty_indexes[:20]))
 
-    write_translated_ass(header, dialogues, translations, output_path, sidecar_json_path=sidecar_path)
+    write_translated_ass(
+        header,
+        dialogues,
+        translations,
+        output_path,
+        sidecar_json_path=sidecar_path,
+        style=DEFAULT_STYLE,
+    )
     print(f'✅ Chinese ASS written: {output_path}')
     print(f'📝 Sidecar written: {sidecar_path}')
     return str(output_path)

@@ -420,12 +420,16 @@ def parse_ass_dialogues(ass_path: str | Path) -> tuple[list[str], list[ParsedAss
 
 def write_translated_ass(header: Sequence[str], dialogues: Sequence[ParsedAssDialogue],
                          translated_texts: Sequence[str], output_path: str | Path,
-                         sidecar_json_path: str | Path | None = None) -> str:
+                         sidecar_json_path: str | Path | None = None,
+                         style: dict | None = None) -> str:
     output_path = Path(output_path)
     records = []
     with open(output_path, "w", encoding="utf-8") as f:
-        for line in header:
-            f.write(line)
+        if style is None:
+            for line in header:
+                f.write(line)
+        else:
+            f.write(generate_ass_header(style))
         for dialogue, translated in zip(dialogues, translated_texts):
             wrapped = wrap_chinese_text(translated)
             karaoke = build_char_karaoke_text(wrapped, dialogue.start, dialogue.end)
