@@ -99,6 +99,16 @@ export https_proxy=http://135.245.192.7:8000
 ~/.local/bin/rclone copy <subtitled_video.mp4> daily_english:daily_english -P
 ```
 
+### Step 7: 清理临时文件
+
+上传完成后，删除中间产物，只保留最终中文字幕成品视频：
+
+- 删除原始下载视频（若已确认成品无误）
+- 删除英文 ASS
+- 删除手动翻译模板 JSON
+- 删除中文 ASS
+- 删除中文 sidecar JSON
+
 ## 📁 目录结构
 
 - **下载目录**：`~/.openclaw/workspace/downloads/`
@@ -127,9 +137,9 @@ pip install faster-whisper yt-dlp
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | font_name | Droid Sans Fallback | 字体 |
-| font_size | 50 | 字号 |
+| font_size | 60 | 字号 |
 | alignment | 2 | 底部居中 |
-| margin_v | 500 | 底部边距 px |
+| margin_v | 700 | 底部边距 px |
 | outline_width | 2 | 描边宽度 |
 
 ## ⚠️ 注意
