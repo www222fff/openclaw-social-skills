@@ -24,6 +24,7 @@ DEFAULT_STYLE = {
 MAX_SOURCE_CHARS_PER_CHUNK = 20
 DEFAULT_CN_CHARS_PER_LINE = 14
 DEFAULT_CN_MAX_LINES = 2
+DISPLAY_SPACE_PUNCTUATION = "，。！？；：、,.!?;:"
 
 ASS_TAG_RE = re.compile(r"\{[^}]*\}")
 
@@ -119,6 +120,11 @@ def ass_text_to_plain(text: str) -> str:
 
 def normalize_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
+
+
+def normalize_cn_display_text(text: str) -> str:
+    translated = str.maketrans({ch: " " for ch in DISPLAY_SPACE_PUNCTUATION})
+    return normalize_text(text.translate(translated))
 
 
 def distribute_evenly(total: int, count: int) -> list[int]:
@@ -431,7 +437,8 @@ def write_translated_ass(header: Sequence[str], dialogues: Sequence[ParsedAssDia
         else:
             f.write(generate_ass_header(style))
         for dialogue, translated in zip(dialogues, translated_texts):
-            wrapped = wrap_chinese_text(translated)
+            display_text = normalize_cn_display_text(translated)
+            wrapped = wrap_chinese_text(display_text)
             karaoke = build_char_karaoke_text(wrapped, dialogue.start, dialogue.end)
             payload = ",".join(dialogue.raw_prefix_fields + [karaoke])
             f.write(f"Dialogue: {payload}\n")
@@ -440,6 +447,7 @@ def write_translated_ass(header: Sequence[str], dialogues: Sequence[ParsedAssDia
                 "end": format_ass_time(dialogue.end),
                 "source": ass_text_to_plain(dialogue.text),
                 "translated": translated,
+                "display_text": display_text,
                 "wrapped": wrapped,
             })
 

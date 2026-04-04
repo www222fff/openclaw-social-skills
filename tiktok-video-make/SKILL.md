@@ -80,6 +80,7 @@ python3 ~/.openclaw/workspace/skills/tiktok-video-make/scripts/build_manual_cn_a
 
 5. **只替换字幕文本，不改每条 Dialogue 的 start/end**
 6. 中文使用 `\kf` 逐字出现效果，必要时最多拆成两行
+7. **中文字幕中的标点统一替换为空格**，减少被标点打断的视觉感受
 
 如果已有现成英文 ASS，也可以直接基于该 ASS 重建中文 ASS；这是当前默认方案。
 
